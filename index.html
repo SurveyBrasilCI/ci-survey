@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--font-sans);background:var(--color-background-tertiary);}
+
+/* ── TOPBAR ── */
+.topbar{background:var(--color-background-primary);border-bottom:.5px solid var(--color-border-tertiary);padding:0 20px;display:flex;align-items:center;justify-content:space-between;height:48px;}
+.topbar-brand{display:flex;align-items:center;gap:8px;}
+.brand-icon{width:26px;height:26px;background:var(--color-background-info);border-radius:6px;display:flex;align-items:center;justify-content:center;}
+.brand-icon i{font-size:14px;color:var(--color-text-info);}
+.brand-name{font-size:13px;font-weight:500;color:var(--color-text-primary);}
+.brand-sub{font-size:10px;color:var(--color-text-tertiary);font-family:var(--font-mono);}
+.topbar-right{font-size:10px;color:var(--color-text-tertiary);font-family:var(--font-mono);}
+
+/* ── SEARCH ── */
+.search-bar{background:var(--color-background-primary);border-bottom:.5px solid var(--color-border-tertiary);padding:10px 20px;}
+.search-wrap{position:relative;}
+.search-wrap i{position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:15px;color:var(--color-text-tertiary);pointer-events:none;}
+.search-input{width:100%;padding:7px 12px 7px 32px;border:.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);font-size:13px;font-family:var(--font-sans);background:var(--color-background-secondary);color:var(--color-text-primary);outline:none;}
+.search-input:focus{border-color:var(--color-border-info);background:var(--color-background-primary);}
+.search-input::placeholder{color:var(--color-text-tertiary);}
+
+/* ── NAV ── */
+.nav{background:var(--color-background-primary);border-bottom:.5px solid var(--color-border-tertiary);padding:0 20px;display:flex;overflow-x:auto;}
+.nav-item{padding:9px 14px;font-size:12px;font-weight:400;color:var(--color-text-secondary);cursor:pointer;border-bottom:2px solid transparent;display:flex;align-items:center;gap:5px;white-space:nowrap;transition:color .12s;}
+.nav-item:hover{color:var(--color-text-primary);}
+.nav-item.active{color:var(--color-text-info);border-bottom-color:var(--color-border-info);font-weight:500;}
+.nav-item i{font-size:14px;}
+
+/* ── MAIN ── */
+.main{padding:16px 20px;}
+.page{display:none;}.page.active{display:block;}
+.empty{text-align:center;padding:40px;color:var(--color-text-tertiary);font-size:13px;}
+.loading{text-align:center;padding:40px;color:var(--color-text-secondary);font-size:13px;}
+
+/* ── SUMMARY ── */
+.summary-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:8px;margin-bottom:16px;}
+.summary-card{background:var(--color-background-primary);border:.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:10px 12px;}
+.summary-label{font-size:10px;color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;font-family:var(--font-mono);}
+.summary-value{font-size:20px;font-weight:500;color:var(--color-text-primary);font-family:var(--font-mono);line-height:1;}
+.summary-value.danger{color:var(--color-text-danger);}
+.summary-value.warn{color:var(--color-text-warning);}
+.section-label{font-size:10px;font-weight:500;color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:.08em;font-family:var(--font-mono);margin-bottom:10px;}
+
+/* ── DASHBOARD CARDS ── */
+.vessels-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:10px;}
+.vessel-card{background:var(--color-background-primary);border:.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);overflow:hidden;display:flex;cursor:pointer;transition:border-color .12s;}
+.vessel-card:hover{border-color:var(--color-border-secondary);}
+.vessel-stripe{width:3px;flex-shrink:0;}
+.stripe-ok{background:#22c55e;}.stripe-warn{background:#f59e0b;}.stripe-critical{background:#ef4444;}
+.vessel-body{padding:12px 14px;flex:1;min-width:0;}
+.vessel-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px;}
+.vessel-name{font-size:13px;font-weight:500;color:var(--color-text-primary);line-height:1.2;}
+.vessel-meta-line{font-size:10px;color:var(--color-text-tertiary);font-family:var(--font-mono);margin-top:2px;}
+.next-vcto{font-size:10px;font-family:var(--font-mono);padding:2px 7px;border-radius:var(--border-radius-md);white-space:nowrap;flex-shrink:0;}
+.vcto-ok{background:var(--color-background-success);color:var(--color-text-success);}
+.vcto-warn{background:var(--color-background-warning);color:var(--color-text-warning);}
+.vcto-danger{background:var(--color-background-danger);color:var(--color-text-danger);}
+.equip-row{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px;}
+.equip-pill{font-size:10px;font-family:var(--font-mono);padding:2px 7px;border-radius:20px;display:flex;align-items:center;gap:4px;border:.5px solid var(--color-border-tertiary);color:var(--color-text-secondary);}
+.equip-pill .dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+.dot-ok{background:#22c55e;}.dot-warn{background:#f59e0b;}.dot-critical{background:#ef4444;}.dot-absent{background:var(--color-border-secondary);}
+.equip-pill.pill-critical{border-color:var(--color-border-danger);color:var(--color-text-danger);}
+.equip-pill.pill-warn{border-color:var(--color-border-warning);color:var(--color-text-warning);}
+
+/* ── FLEET MATRIX ── */
+.matrix-wrap{overflow-x:auto;}
+.matrix-table{border-collapse:collapse;font-size:11px;font-family:var(--font-mono);width:100%;}
+.matrix-table th{background:var(--color-background-secondary);border:.5px solid var(--color-border-tertiary);padding:5px 8px;font-size:10px;font-weight:500;color:var(--color-text-secondary);text-align:center;white-space:nowrap;}
+.matrix-table th.left-header{text-align:left;}
+.matrix-table td{border:.5px solid var(--color-border-tertiary);padding:4px 6px;vertical-align:middle;}
+.matrix-table td.vessel-name-cell{font-weight:500;white-space:nowrap;background:var(--color-background-secondary);font-size:11px;cursor:pointer;color:var(--color-text-primary);text-align:left;}
+.matrix-table td.vessel-name-cell:hover{color:var(--color-text-info);}
+.matrix-table td.rov-cell{font-size:10px;color:var(--color-text-tertiary);background:var(--color-background-secondary);white-space:nowrap;text-align:left;}
+.split-cell{display:flex;align-items:center;justify-content:center;gap:0;height:24px;}
+.split-half{flex:1;display:flex;align-items:center;justify-content:center;}
+.split-divider{width:1px;height:14px;background:var(--color-border-tertiary);flex-shrink:0;}
+.single-cell{display:flex;align-items:center;justify-content:center;height:24px;}
+.m-dot{width:8px;height:8px;border-radius:50%;}
+.m-ok{background:#22c55e;}.m-warn{background:#f59e0b;}.m-critical{background:#ef4444;}.m-absent{background:var(--color-border-tertiary);opacity:.45;}.m-spare{background:#3b82f6;}
+.matrix-legend{display:flex;gap:14px;align-items:center;margin-bottom:12px;flex-wrap:wrap;}
+.legend-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--color-text-secondary);}
+
+/* ── VESSEL DETAIL ── */
+.vd-header{background:var(--color-background-primary);border:.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:16px 20px;margin-bottom:14px;display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;}
+.vd-header-left{flex:1;min-width:0;}
+.vd-back{display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--color-text-tertiary);cursor:pointer;margin-bottom:8px;background:none;border:none;font-family:var(--font-sans);padding:0;}
+.vd-back:hover{color:var(--color-text-info);}
+.vd-vessel-name{font-size:18px;font-weight:500;color:var(--color-text-primary);margin-bottom:4px;display:flex;align-items:center;gap:10px;}
+.vd-stripe-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.vd-meta{display:flex;gap:16px;flex-wrap:wrap;}
+.vd-meta-item{font-size:11px;color:var(--color-text-secondary);display:flex;align-items:center;gap:4px;font-family:var(--font-mono);}
+.vd-header-right{display:flex;flex-direction:column;align-items:flex-end;gap:6px;}
+.vd-update{font-size:10px;color:var(--color-text-tertiary);font-family:var(--font-mono);}
+.vd-status-badge{font-size:10px;padding:3px 10px;border-radius:var(--border-radius-md);font-family:var(--font-mono);}
+.badge-ok{background:var(--color-background-success);color:var(--color-text-success);}
+.badge-warn{background:var(--color-background-warning);color:var(--color-text-warning);}
+.badge-critical{background:var(--color-background-danger);color:var(--color-text-danger);}
+.vd-section{margin-bottom:14px;}
+.vd-section-title{font-size:10px;font-weight:500;color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:.08em;font-family:var(--font-mono);margin-bottom:8px;}
+.equip-cards-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px;}
+
+/* ── EQUIP CARD ── */
+.equip-card{background:var(--color-background-primary);border:.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:10px 12px;border-left:3px solid transparent;}
+.equip-card.st-ok{border-left-color:#22c55e;}
+.equip-card.st-warn{border-left-color:#f59e0b;}
+.equip-card.st-critical{border-left-color:#ef4444;}
+.equip-card.st-absent{border-left-color:var(--color-border-tertiary);opacity:.5;}
+.equip-card.st-spare{border-left-color:#3b82f6;}
+.ec-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;}
+.ec-name{font-size:11px;font-weight:500;color:var(--color-text-primary);}
+.ec-status{font-size:9px;font-family:var(--font-mono);padding:1px 5px;border-radius:4px;}
+.ec-status.ok{background:var(--color-background-success);color:var(--color-text-success);}
+.ec-status.warn{background:var(--color-background-warning);color:var(--color-text-warning);}
+.ec-status.critical{background:var(--color-background-danger);color:var(--color-text-danger);}
+.ec-status.spare{background:rgba(59,130,246,.18);color:#60a5fa;}
+.ec-serial{font-size:13px;font-weight:600;color:var(--color-text-primary);font-family:var(--font-mono);margin-bottom:3px;}
+.ec-model{font-size:10px;color:var(--color-text-tertiary);font-family:var(--font-mono);margin-bottom:4px;}
+.ec-vcto{font-size:10px;font-family:var(--font-mono);margin-top:2px;}
+.ec-vcto.ok{color:var(--color-text-success);}
+.ec-vcto.warn{color:var(--color-text-warning);}
+.ec-vcto.critical{color:var(--color-text-danger);}
+
+/* ── CERTIFICAÇÕES ── */
+.cert-filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;align-items:center;}
+.cert-select{font-size:12px;padding:5px 10px;border:.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);background:var(--color-background-secondary);color:var(--color-text-primary);font-family:var(--font-sans);outline:none;cursor:pointer;}
+.cert-select:focus{border-color:var(--color-border-info);}
+.cert-table-wrap{overflow-x:auto;}
+.cert-table{border-collapse:collapse;width:100%;font-size:12px;}
+.cert-table th{background:var(--color-background-secondary);border:.5px solid var(--color-border-tertiary);padding:7px 12px;font-size:10px;font-weight:500;color:var(--color-text-secondary);text-align:left;font-family:var(--font-mono);}
+.cert-table td{border:.5px solid var(--color-border-tertiary);padding:7px 12px;vertical-align:middle;color:var(--color-text-primary);}
+.cert-table tr:hover td{background:var(--color-background-secondary);}
+.cert-table td.mono{font-family:var(--font-mono);font-size:11px;}
+.cert-vessel-link{cursor:pointer;color:var(--color-text-info);font-weight:500;}
+.cert-vessel-link:hover{text-decoration:underline;}
+.days-badge{display:inline-block;font-size:10px;font-family:var(--font-mono);padding:2px 8px;border-radius:4px;}
+.days-expired{background:rgba(239,68,68,.15);color:#ef4444;}
+.days-critical{background:rgba(249,115,22,.15);color:#f97316;}
+.days-warn{background:rgba(245,158,11,.15);color:#f59e0b;}
+.days-ok{background:rgba(34,197,94,.1);color:#22c55e;}
+
+/* Color scheme variables */
+:root {
+  --color-background-primary: #0d1117;
+  --color-background-secondary: #161b22;
+  --color-background-tertiary: #0d1117;
+  --color-text-primary: #c9d1d9;
+  --color-text-secondary: #8b949e;
+  --color-text-tertiary: #6e7681;
+  --color-text-info: #58a6ff;
+  --color-text-danger: #f85149;
+  --color-text-warning: #d29922;
+  --color-text-success: #3fb950;
+  --color-border-tertiary: #0d1117;
+  --color-border-secondary: #21262d;
+  --color-border-info: #58a6ff;
+  --color-background-success: rgba(63, 185, 80, .15);
+  --color-background-warning: rgba(210, 153, 34, .15);
+  --color-background-danger: rgba(248, 81, 73, .15);
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+  --font-mono: 'Courier New', Courier, monospace;
+  --border-radius-md: 6px;
+  --border-radius-lg: 8px;
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <div class="topbar-brand">
+      <div class="brand-icon">📡</div>
+      <div><div class="brand-name">CI Survey Brasil</div><div class="brand-sub">Fleet Configuration Portal</div></div>
+    </div>
+    <div class="topbar-right" id="last-update">—</div>
+  </div>
+
+  <div class="search-bar" id="search-bar">
+    <div class="search-wrap">
+      <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:15px;color:var(--color-text-tertiary);">🔍</span>
+      <input class="search-input" type="text" id="search-input" placeholder="Buscar embarcação, ROV, equipamento, modelo, nº série..." oninput="onSearch(this.value)"/>
+    </div>
+  </div>
+
+  <nav class="nav">
+    <div class="nav-item active" onclick="setPage('dashboard')" id="nav-dashboard">📊 Visão Geral</div>
+    <div class="nav-item" onclick="setPage('matrix')" id="nav-matrix">📋 Fleet Matrix</div>
+    <div class="nav-item" onclick="setPage('cert')" id="nav-cert">🏅 Certificações</div>
+  </nav>
+
+  <div class="main">
+    <div id="page-dashboard" class="page active">
+      <div class="summary-row" id="summary-row"></div>
+      <div class="section-label">Frota — <span id="vessel-count"></span></div>
+      <div class="vessels-grid" id="vessels-grid"></div>
+    </div>
+
+    <div id="page-vessel" class="page"><div id="vessel-detail-content"></div></div>
+
+    <div id="page-matrix" class="page">
+      <div class="matrix-legend">
+        <span class="legend-item"><span class="m-dot m-ok"></span>Operacional</span>
+        <span class="legend-item"><span class="m-dot m-warn"></span>Atenção</span>
+        <span class="legend-item"><span class="m-dot m-critical"></span>Inoperante/Vencido</span>
+        <span class="legend-item"><span class="m-dot m-spare"></span>Spare</span>
+        <span class="legend-item"><span class="m-dot m-absent"></span>Não embarcado</span>
+      </div>
+      <div class="matrix-wrap"><table class="matrix-table" id="matrix-table"></table></div>
+    </div>
+
+    <div id="page-cert" class="page">
+      <div class="cert-filters">
+        <select class="cert-select" id="cf-vessel" onchange="renderCert()"><option value="">Todas as embarcações</option></select>
+        <select class="cert-select" id="cf-equip" onchange="renderCert()"><option value="">Todos os equipamentos</option></select>
+        <select class="cert-select" id="cf-period" onchange="renderCert()">
+          <option value="0">Todos os períodos</option>
+          <option value="30">Próximos 30 dias</option>
+          <option value="60">Próximos 60 dias</option>
+          <option value="90">Próximos 90 dias</option>
+          <option value="180">Próximos 180 dias</option>
+          <option value="-1">Vencidos</option>
+        </select>
+      </div>
+      <div class="cert-table-wrap"><table class="cert-table" id="cert-table"></table></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const SHEETS_ID = '1vS6XUVeWlxCKbL6dLvNvRhRFtYtxZ6ZIokDKGiUiuaISQUt6CyJ1W8f1M1Gtx0KyANviVqIsEeLQ3MT';
+const CRITICAL_EQUIPS=['SprintNav','Mini-Beacon','Digiquartz','SVX','Ranger'];
+const ROV_EQUIPS=['SprintNav','Mini-Beacon','Digiquartz','SVX','DVL'];
+const SYS_EQUIPS=['Ranger','HPT','Navipac PC','Ranger PC','NAS','DVR'];
+const SPLIT_EQUIPS=new Set(['SprintNav','Mini-Beacon','Digiquartz','SVX','DVL']);
+
+let FLEET = [];
+let allVesselData = [];
+
+function getDaysUntil(d){const t=new Date();t.setHours(0,0,0,0);return Math.round((new Date(d)-t)/86400000);}
+function fmtDate(d){const[y,m,dd]=d.split('-');return`${dd}/${m}/${y}`;}
+function equipStatus(item){
+  if(item.status==='Spare') return 'spare';
+  const days=getDaysUntil(item.vencimento);
+  if(item.status==='Inoperante'||days<0) return 'critical';
+  if(days<=60) return 'warn';
+  return 'ok';
+}
+function vesselStatus(items){
+  const active=items.filter(i=>i.status!=='Spare');
+  if(active.some(i=>equipStatus(i)==='critical')) return 'critical';
+  if(active.some(i=>equipStatus(i)==='warn')) return 'warn';
+  return 'ok';
+}
+function nextVcto(items){return items.filter(i=>i.status!=='Spare').slice().sort((a,b)=>new Date(a.vencimento)-new Date(b.vencimento))[0];}
+
+// Parse CSV
+function parseCSV(text) {
+  const lines = text.trim().split('\n');
+  const headers = lines[0].split(',').map(h => h.trim());
+  const data = [];
+  for (let i = 1; i < lines.length; i++) {
+    if (lines[i].trim() === '') continue;
+    const obj = {};
+    const values = lines[i].split(',');
+    for (let j = 0; j < headers.length; j++) {
+      obj[headers[j]] = values[j] ? values[j].trim() : '';
+    }
+    data.push(obj);
+  }
+  return data;
+}
+
+// Fetch data from Google Sheets
+async function fetchData() {
+  try {
+    document.getElementById('vessels-grid').innerHTML = '<div class="loading">Carregando dados...</div>';
+    const csvUrl = `https://docs.google.com/spreadsheets/d/${SHEETS_ID}/export?format=csv`;
+    const response = await fetch(csvUrl);
+    const text = await response.text();
+    const data = parseCSV(text);
+    
+    const embarcacoes = [...new Set(data.map(d => d.embarcacao))];
+    FLEET = embarcacoes.map(emb => {
+      const rovs = [...new Set(data.filter(d => d.embarcacao === emb && d.rov !== 'Sistema').map(d => d.rov))];
+      return { embarcacao: emb, rovs };
+    });
+    
+    return {
+      lastUpdate: new Date().toLocaleDateString('pt-BR') + ' ' + new Date().toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'}),
+      inventario: data
+    };
+  } catch (e) {
+    console.error('Erro ao carregar dados:', e);
+    document.getElementById('vessels-grid').innerHTML = '<div class="empty">Erro ao carregar dados da planilha.</div>';
+    return { lastUpdate: '—', inventario: [] };
+  }
+}
+
+function buildVesselList(data){
+  return FLEET.map(f=>{
+    const items=data.inventario.filter(i=>i.embarcacao===f.embarcacao);
+    const nv=nextVcto(items);
+    return{name:f.embarcacao,rovs:f.rovs,status:vesselStatus(items),
+      critEquips:CRITICAL_EQUIPS.map(eq=>{const found=items.find(i=>i.equipamento===eq&&i.status!=='Spare');return{name:eq,st:found?equipStatus(found):'absent'};}),
+      nextVcto:nv,nvDays:nv?getDaysUntil(nv.vencimento):null};
+  });
+}
+
+function renderVctoTag(v){
+  if(!v.nextVcto)return'';
+  const d=v.nvDays;
+  let cls='vcto-ok',label='';
+  if(d<0){cls='vcto-danger';label=`Vencido ${Math.abs(d)}d`;}
+  else if(d<=30){cls='vcto-danger';label=`Vcto ${d}d`;}
+  else if(d<=60){cls='vcto-warn';label=`Vcto ${d}d`;}
+  else{cls='vcto-ok';label=`Vcto ${d}d`;}
+  return`<span class="next-vcto ${cls}">${label} · ${v.nextVcto.equipamento}</span>`;
+}
+
+function renderEquipPills(ce){
+  return ce.map(e=>{
+    const dc={ok:'dot-ok',warn:'dot-warn',critical:'dot-critical',absent:'dot-absent'}[e.st];
+    const pc=e.st==='critical'?'pill-critical':e.st==='warn'?'pill-warn':'';
+    return`<span class="equip-pill ${pc}"><span class="dot ${dc}"></span>${e.name}</span>`;
+  }).join('');
+}
+
+function renderDashboardCard(v){
+  const sc={ok:'stripe-ok',warn:'stripe-warn',critical:'stripe-critical'}[v.status];
+  return`<div class="vessel-card" onclick="openVessel('${v.name.replace(/'/g,"\\'")}')">
+    <div class="vessel-stripe ${sc}"></div>
+    <div class="vessel-body">
+      <div class="vessel-header">
+        <div><div class="vessel-name">${v.name}</div><div class="vessel-meta-line">${v.rovs.join(' / ')}</div></div>
+        ${renderVctoTag(v)}
+      </div>
+      <div class="equip-row">${renderEquipPills(v.critEquips)}</div>
+    </div>
+  </div>`;
+}
+
+function renderSummary(data,vessels){
+  const crit=vessels.filter(v=>v.status==='critical').length;
+  const warn=vessels.filter(v=>v.status==='warn').length;
+  const inop=data.inventario.filter(i=>i.status==='Inoperante').length;
+  document.getElementById('summary-row').innerHTML=`
+    <div class="summary-card"><div class="summary-label">Frota</div><div class="summary-value">${vessels.length}</div></div>
+    <div class="summary-card"><div class="summary-label">Crítico</div><div class="summary-value danger">${crit}</div></div>
+    <div class="summary-card"><div class="summary-label">Atenção</div><div class="summary-value warn">${warn}</div></div>
+    <div class="summary-card"><div class="summary-label">Inoperantes</div><div class="summary-value danger">${inop}</div></div>`;
+}
+
+function matrixDot(st){
+  const cls={ok:'m-ok',warn:'m-warn',critical:'m-critical',spare:'m-spare',absent:'m-absent'}[st]||'m-absent';
+  return`<span class="m-dot ${cls}"></span>`;
+}
+
+function renderMatrix(data){
+  const allEquips=[...new Set(data.inventario.map(i=>i.equipamento))].sort();
+  let h='<thead><tr><th class="left-header">Embarcação</th><th class="left-header">ROVs</th>';
+  allEquips.forEach(eq=>{h+=`<th>${eq}</th>`;});
+  h+='</tr></thead><tbody>';
+  FLEET.forEach(f=>{
+    const items=data.inventario.filter(i=>i.embarcacao===f.embarcacao);
+    const vst=vesselStatus(items);
+    const sc={ok:'#22c55e',warn:'#f59e0b',critical:'#ef4444'}[vst];
+    h+=`<tr><td class="vessel-name-cell" style="border-left:3px solid ${sc};" onclick="openVessel('${f.embarcacao.replace(/'/g,"\\'")}')">${f.embarcacao}</td>`;
+    h+=`<td class="rov-cell">${f.rovs.join(' / ')}</td>`;
+    allEquips.forEach(eq=>{
+      if(SPLIT_EQUIPS.has(eq)&&f.rovs.length>1){
+        const r1items=items.filter(i=>i.rov===f.rovs[0]&&i.equipamento===eq);
+        const r2items=items.filter(i=>i.rov===f.rovs[1]&&i.equipamento===eq);
+        const st1=r1items.length?equipStatus(r1items[0]):'absent';
+        const st2=r2items.length?equipStatus(r2items[0]):'absent';
+        h+=`<td><div class="split-cell"><div class="split-half">${matrixDot(st1)}</div><div class="split-divider"></div><div class="split-half">${matrixDot(st2)}</div></div></td>`;
+      } else {
+        const found=items.find(i=>i.equipamento===eq&&i.status!=='Spare');
+        const st=found?equipStatus(found):'absent';
+        h+=`<td><div class="single-cell">${matrixDot(st)}</div></td>`;
+      }
+    });
+    h+='</tr>';
+  });
+  h+='</tbody>';
+  document.getElementById('matrix-table').innerHTML=h;
+}
+
+function renderEquipCard(item){
+  const st=equipStatus(item);
+  const stCls={ok:'st-ok',warn:'st-warn',critical:'st-critical',spare:'st-spare'}[st]||'st-absent';
+  const stLabel={ok:'Operacional',warn:'Atenção',critical:item.status==='Inoperante'?'Inoperante':'Vencido',spare:'Spare'}[st];
+  const stBadge={ok:'ok',warn:'warn',critical:'critical',spare:'spare'}[st];
+  const days=getDaysUntil(item.vencimento);
+  const vctoClass=days<0?'critical':days<=30?'critical':days<=60?'warn':'ok';
+  const vctoLabel=days<0?`Vencido há ${Math.abs(days)}d`:days===0?'Vence hoje':`Vcto em ${days}d — ${fmtDate(item.vencimento)}`;
+  return`<div class="equip-card ${stCls}">
+    <div class="ec-top"><span class="ec-name">${item.equipamento}</span><span class="ec-status ${stBadge}">${stLabel}</span></div>
+    <div class="ec-serial">${item.serie}</div>
+    <div class="ec-model">${item.modelo}</div>
+    <div class="ec-vcto ${vctoClass}">${vctoLabel}</div>
+  </div>`;
+}
+
+function openVessel(name){
+  const data = window.currentData;
+  const fleet=FLEET.find(f=>f.embarcacao===name);
+  const items=data.inventario.filter(i=>i.embarcacao===name);
+  const vst=vesselStatus(items);
+  const dotColor={ok:'#22c55e',warn:'#f59e0b',critical:'#ef4444'}[vst];
+  const badgeCls={ok:'badge-ok',warn:'badge-warn',critical:'badge-critical'}[vst];
+  const badgeLabel={ok:'Operacional',warn:'Atenção',critical:'Crítico'}[vst];
+  const rovs=fleet?fleet.rovs:[];
+  let html=`<div class="vd-header">
+    <div class="vd-header-left">
+      <button class="vd-back" onclick="setPage('dashboard')">← Voltar</button>
+      <div class="vd-vessel-name"><span class="vd-stripe-dot" style="background:${dotColor};"></span>${name}</div>
+      <div class="vd-meta">
+        ${rovs.map(r=>`<span class="vd-meta-item">🤖 ${r}</span>`).join('')}
+      </div>
+    </div>
+    <div class="vd-header-right">
+      <span class="vd-status-badge ${badgeCls}">${badgeLabel}</span>
+      <span class="vd-update">Atualizado ${data.lastUpdate}</span>
+    </div>
+  </div>`;
+  rovs.forEach(rov=>{
+    const rovItems=items.filter(i=>i.rov===rov);
+    html+=`<div class="vd-section"><div class="vd-section-title">🤖 ${rov}</div><div class="equip-cards-grid">`;
+    ROV_EQUIPS.forEach(eq=>{
+      const found=rovItems.filter(i=>i.equipamento===eq);
+      if(found.length){found.forEach(f=>html+=renderEquipCard(f));}
+    });
+    html+=`</div></div>`;
+  });
+  const sysItems=items.filter(i=>i.rov==='Sistema');
+  html+=`<div class="vd-section"><div class="vd-section-title">🖥️ Sistema</div><div class="equip-cards-grid">`;
+  SYS_EQUIPS.forEach(eq=>{
+    const found=sysItems.find(i=>i.equipamento===eq);
+    if(found)html+=renderEquipCard(found);
+  });
+  html+=`</div></div>`;
+  document.getElementById('vessel-detail-content').innerHTML=html;
+  setPage('vessel');
+}
+
+function initCertFilters(data){
+  const vs=document.getElementById('cf-vessel');
+  const eq=document.getElementById('cf-equip');
+  FLEET.forEach(f=>{const o=document.createElement('option');o.value=f.embarcacao;o.textContent=f.embarcacao;vs.appendChild(o);});
+  const equips=[...new Set(data.inventario.map(i=>i.equipamento))].sort();
+  equips.forEach(e=>{const o=document.createElement('option');o.value=e;o.textContent=e;eq.appendChild(o);});
+}
+
+function renderCert(){
+  const data = window.currentData;
+  const fv=document.getElementById('cf-vessel').value;
+  const fe=document.getElementById('cf-equip').value;
+  const fp=parseInt(document.getElementById('cf-period').value);
+  let rows=data.inventario.filter(i=>i.status!=='Spare');
+  if(fv) rows=rows.filter(r=>r.embarcacao===fv);
+  if(fe) rows=rows.filter(r=>r.equipamento===fe);
+  rows=rows.map(r=>({...r,days:getDaysUntil(r.vencimento)}));
+  if(fp===0){}
+  else if(fp===-1){rows=rows.filter(r=>r.days<0);}
+  else{rows=rows.filter(r=>r.days>=0&&r.days<=fp);}
+  rows.sort((a,b)=>a.days-b.days);
+  let h=`<thead><tr>
+    <th>Embarcação</th><th>ROV</th><th>Equipamento</th><th>Modelo</th><th>Série</th><th>Vencimento</th><th>Status</th><th>Dias</th>
+  </tr></thead><tbody>`;
+  if(!rows.length){h+=`<tr><td colspan="8" style="text-align:center;padding:24px;">Nenhum resultado</td></tr>`;}
+  rows.forEach(r=>{
+    const st=equipStatus(r);
+    let daysCls='days-ok',daysLabel='';
+    if(r.days<0){daysCls='days-expired';daysLabel=`Vencido ${Math.abs(r.days)}d`;}
+    else if(r.days<=30){daysCls='days-critical';daysLabel=`${r.days}d`;}
+    else if(r.days<=60){daysCls='days-warn';daysLabel=`${r.days}d`;}
+    else{daysCls='days-ok';daysLabel=`${r.days}d`;}
+    h+=`<tr>
+      <td><span class="cert-vessel-link" onclick="openVessel('${r.embarcacao.replace(/'/g,"\\'")}')">${r.embarcacao}</span></td>
+      <td class="mono">${r.rov}</td>
+      <td>${r.equipamento}</td>
+      <td class="mono">${r.modelo}</td>
+      <td class="mono">${r.serie}</td>
+      <td class="mono">${fmtDate(r.vencimento)}</td>
+      <td>${r.status}</td>
+      <td><span class="days-badge ${daysCls}">${daysLabel}</span></td>
+    </tr>`;
+  });
+  h+='</tbody>';
+  document.getElementById('cert-table').innerHTML=h;
+}
+
+function onSearch(q){
+  const term=q.toLowerCase().trim();
+  if(!term){renderGrid(allVesselData);return;}
+  const data = window.currentData;
+  const matched=new Set();
+  data.inventario.forEach(i=>{if([i.embarcacao,i.equipamento,i.modelo,i.serie,i.rov].join(' ').toLowerCase().includes(term))matched.add(i.embarcacao);});
+  renderGrid(allVesselData.filter(v=>matched.has(v.name)));
+}
+
+function renderGrid(vessels){
+  document.getElementById('vessel-count').textContent=`${vessels.length}`;
+  document.getElementById('vessels-grid').innerHTML=vessels.length===0
+    ?`<div class="empty" style="grid-column:1/-1;">Nenhum resultado</div>`
+    :vessels.map(renderDashboardCard).join('');
+}
+
+function setPage(page){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  const navEl=document.getElementById('nav-'+page);
+  if(navEl)navEl.classList.add('active');
+  document.getElementById('search-bar').style.display=page==='vessel'?'none':'';
+  if(page==='dashboard')renderGrid(allVesselData);
+  if(page==='cert')renderCert();
+}
+
+async function init(){
+  const data = await fetchData();
+  window.currentData = data;
+  document.getElementById('last-update').textContent='Atualizado '+data.lastUpdate;
+  allVesselData=buildVesselList(data);
+  renderSummary(data,allVesselData);
+  renderGrid(allVesselData);
+  renderMatrix(data);
+  initCertFilters(data);
+}
+
+init();
+</script>
+</body>
+</html>
